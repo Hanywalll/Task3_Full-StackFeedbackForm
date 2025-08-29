@@ -21,3 +21,15 @@ Aplikasi ini terdiri dari **backend** menggunakan PHP (API) dan **frontend** men
 - **Backend**: PHP (API untuk submit & retrieve feedback)
 - **Frontend**: HTML, CSS, JavaScript (AJAX / Fetch API)
 - **Database**: MySQL (opsional, untuk menyimpan feedback)
+
+
+## 🗄️ Database
+
+Proyek ini terhubung dengan **MySQL** untuk menyimpan umpan balik pengguna.
+
+- **Nama Database:** `user_auth`  
+- **Nama Tabel:** `feedback.sql`
+
+👉 Skrip SQL untuk membuat tabel tersedia secara terpisah dalam repositori.
+
+---
