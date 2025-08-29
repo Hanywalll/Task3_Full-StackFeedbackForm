@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Formulir Feedback</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background-color: #f0f2f5;
+            
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        
+        .main-container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 30px;
+            width: fit-content;
+            
+            /* Hapus: margin: 0 auto; karena sudah dihandle oleh body flexbox */
+        }
+
+        .form-container, .feedback-container-wrapper {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            width: 450px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            height: 500px;
+        }
+
+        .feedback-container-wrapper {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .feedback-container-wrapper h2 {
+            margin-bottom: 20px;
+        }
+        
+        #feedbackContainer {
+            flex-grow: 1;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .input-wrapper input,
+        .input-wrapper textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            padding-right: 35px;
+        }
+        
+        .input-wrapper textarea {
+            min-height: 100px;
+            resize: none;
+        }
+
+        button { 
+            width: 100%;
+            padding: 12px;
+            border: none; 
+            border-radius: 8px; 
+            background-color: #007bff;
+            color: white; 
+            font-size: 16px; 
+            cursor: pointer; 
+            transition: background-color 0.3s; 
+            margin-top: auto;
+        }
+        button:hover { 
+            background-color: #0056b3;
+        }
+
+        .feedback-item { 
+            border: 1px solid #ddd; 
+            padding: 15px; 
+            margin-bottom: 10px; 
+            border-radius: 6px;
+            background-color: #f9f9f9;
+        }
+        
+        .feedback-item p {
+            word-wrap: break-word;
+        }
+
+        .feedback-item h4, .feedback-item p {
+            margin: 0;
+            line-height: 1.5;
+        }
+        .feedback-item small {
+            display: block;
+            margin-top: 5px;
+            color: #666;
+        }
+        
+        /* === Gaya Popover === */
+        .popover {
+            visibility: hidden;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px 12px;
+            position: absolute;
+            z-index: 10;
+            left: 105%;
+            top: 50%;
+            transform: translateY(-50%);
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .popover::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            right: 100%;
+            margin-top: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: transparent #333 transparent transparent;
+        }
+        
+        .popover.show {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .error-icon {
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            color: #d9534f;
+            font-weight: bold;
+            font-size: 1.2em;
+            display: none;
+            z-index: 10;
+        }
+        
+        .error-icon.show {
+            display: block;
+        }
+
+        /* === Gaya Modal Alert (untuk sukses/koneksi) === */
+        .modal-backdrop { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(5px); 
+            z-index: 999; display: none; 
+        }
+        .custom-alert-modal { 
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            width: 90%; max-width: 400px; background: #fff; border-radius: 20px; 
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2); z-index: 1000; text-align: center; 
+            display: none; opacity: 0; transition: all 0.3s ease; 
+        }
+        .custom-alert-modal.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        .modal-content { padding: 30px; }
+        .icon-container { padding-top: 10px; margin-bottom: 20px; }
+        .error-icon-modal { width: 60px; height: 60px; stroke: #D14343; }
+        .success-icon { width: 60px; height: 60px; stroke: #4CAF50; }
+        .modal-body h2 { font-size: 24px; font-weight: bold; color: #333; margin: 0 0 10px; }
+        .modal-body p { font-size: 16px; color: #666; margin: 0 0 20px; }
+        
+        .modal-body { text-align: center; } 
+        
+        .modal-details p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        #okButton { 
+            padding: 12px 30px; 
+            border: none; 
+            border-radius: 10px; 
+            background-color: #6C5CE7; 
+            color: white; 
+            font-weight: bold; 
+            font-size: 16px; 
+            cursor: pointer; 
+            transition: background-color 0.3s; 
+        }
+        #okButton:hover { 
+            background-color: #5d4ed1; 
+        }
+
+        /* === Gaya Paginasi === */
+        .pagination {
+    text-align: center;
+    margin-top: auto;
+    padding-top: 20px;
+    
+    /* PERUBAHAN UTAMA: Gunakan Flexbox untuk tata letak yang rapi */
+    display: flex;
+    flex-wrap: nowrap; /* Mencegah tombol turun ke baris baru */
+    justify-content: center;
+    gap: 5px; /* Memberikan jarak antar tombol */
+}
+
+/* Modifikasi pada tombol-tombol paginasi agar lebar seragam */
+.pagination button {
+    width: 40px; /* Atur lebar tetap untuk setiap tombol */
+    height: 40px; /* Atur tinggi agar bentuknya kotak */
+    padding: 0;
+    margin: 0;
+    background-color: #f0f0f0;
+    color: #333;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    display: flex; /* Gunakan flexbox untuk menengahkan teks */
+    justify-content: center;
+    align-items: center;
+}
+.pagination button:hover {
+    background-color: #ddd;
+}
+.pagination button.active {
+    background-color: #007bff;
+    color: white;
+}
+.pagination button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="form-container">
+            <h2>Kirim Feedback</h2>
+            <form id="feedbackForm" novalidate>
+                <div class="input-wrapper">
+                    <input type="text" id="name" placeholder="Nama Anda">
+                    <span class="error-icon" id="name-icon">!</span>
+                    <span class="popover" id="name-popover"></span>
+                </div>
+                <div class="input-wrapper">
+                    <input type="email" id="email" placeholder="Email Anda">
+                    <span class="error-icon" id="email-icon">!</span>
+                    <span class="popover" id="email-popover"></span>
+                </div>
+                <div class="input-wrapper">
+                    <textarea id="comments" placeholder="Komentar Anda" rows="5"></textarea>
+                    <span class="error-icon" id="comments-icon">!</span>
+                    <span class="popover" id="comments-popover"></span>
+                </div>
+                <button type="submit">Kirim Feedback</button>
+            </form>
+        </div>
+
+        <div class="feedback-container-wrapper">
+            <h2>Feedback Terkirim</h2>
+            <div id="feedbackContainer"></div>
+            <div class="pagination" id="pagination-container"></div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop"></div>
+    <div class="custom-alert-modal">
+        <div class="modal-content">
+            <div class="icon-container"></div>
+            <div class="modal-body">
+                <h2 id="alertTitle"></h2>
+                <p id="alertMessage"></p>
+                <div id="alertDetails" class="modal-details"></div>
+                <button id="okButton">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const feedbackForm = document.getElementById('feedbackForm');
+        const feedbackContainer = document.getElementById('feedbackContainer');
+        const paginationContainer = document.getElementById('pagination-container');
+        const nameInput = document.getElementById('name');
+        const emailInput = document.getElementById('email');
+        const commentsInput = document.getElementById('comments');
+        const submitButton = feedbackForm.querySelector('button[type="submit"]');
+
+        const nameIcon = document.getElementById('name-icon');
+        const namePopover = document.getElementById('name-popover');
+        const emailIcon = document.getElementById('email-icon');
+        const emailPopover = document.getElementById('email-popover');
+        const commentsIcon = document.getElementById('comments-icon');
+        const commentsPopover = document.getElementById('comments-popover');
+
+        const modal = document.querySelector('.custom-alert-modal');
+        const backdrop = document.querySelector('.modal-backdrop');
+        const okButton = document.getElementById('okButton');
+        const alertTitle = document.getElementById('alertTitle');
+        const alertMessage = document.getElementById('alertMessage');
+        const iconContainer = document.querySelector('.icon-container');
+        const alertDetails = document.getElementById('alertDetails');
+
+        const itemsPerPage = 5;
+        let currentPage = 1;
+        let allFeedbacks = [];
+
+        function hideAllPopovers() {
+            hidePopover(nameIcon, namePopover);
+            hidePopover(emailIcon, emailPopover);
+            hidePopover(commentsIcon, commentsPopover);
+        }
+
+        function showPopover(iconElement, popoverElement, message) {
+            popoverElement.textContent = message;
+            iconElement.classList.add('show');
+            popoverElement.classList.add('show');
+        }
+
+        function hidePopover(iconElement, popoverElement) {
+            iconElement.classList.remove('show');
+            popoverElement.classList.remove('show');
+        }
+
+        function showAlert(title, message, isSuccess, details = null) {
+            alertTitle.textContent = title;
+            alertMessage.textContent = message;
+            alertDetails.innerHTML = '';
+            
+            if (isSuccess) {
+                iconContainer.innerHTML = `<svg class="success-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-8.62"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`;
+            } else {
+                iconContainer.innerHTML = `<svg class="error-icon-modal" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`;
+            }
+
+            if (details) {
+                alertDetails.innerHTML = `
+                    <p><strong>Pengirim:</strong> ${details.name}</p>
+                    <p><strong>Email:</strong> ${details.email}</p>
+                    <p><strong>Tanggal:</strong> ${details.date}</p>
+                `;
+            }
+
+            modal.style.display = 'block';
+            backdrop.style.display = 'block';
+            setTimeout(() => { modal.classList.add('show'); }, 10);
+            okButton.focus();
+        }
+
+        function hideAlert() {
+            modal.classList.remove('show');
+            backdrop.style.opacity = '0';
+            setTimeout(() => {
+                modal.style.display = 'none';
+                backdrop.style.display = 'none';
+            }, 300);
+            
+            feedbackForm.reset();
+            hideAllPopovers();
+            document.activeElement.blur();
+        }
+
+        okButton.addEventListener('click', hideAlert);
+        backdrop.addEventListener('click', hideAlert);
+        
+        okButton.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                hideAlert();
+            }
+        });
+
+        function displayFeedback(feedbacks, page) {
+            feedbackContainer.innerHTML = '';
+            const start = (page - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const paginatedItems = feedbacks.slice(start, end);
+
+            if (feedbacks.length === 0) {
+                feedbackContainer.innerHTML = '<p>Belum ada feedback.</p>';
+                paginationContainer.innerHTML = '';
+                return;
+            }
+
+            paginatedItems.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'feedback-item';
+                div.innerHTML = `
+                    <h4>Pengirim: ${item.name}</h4>
+                    <p>Email: ${item.email}</p>
+                    <small>Waktu Kirim: ${item.created_at}</small>
+                    <p>${item.comments}</p>
+                `;
+                feedbackContainer.appendChild(div);
+            });
+
+            setupPagination(feedbacks.length);
+        }
+
+        function setupPagination(totalItems) {
+            paginationContainer.innerHTML = '';
+            const pageCount = Math.ceil(totalItems / itemsPerPage);
+
+            if (pageCount <= 1) {
+                paginationContainer.innerHTML = '';
+                return;
+            }
+
+            const prevButton = document.createElement('button');
+            prevButton.textContent = '«';
+            prevButton.disabled = currentPage === 1;
+            prevButton.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    displayFeedback(allFeedbacks, currentPage);
+                }
+            });
+            paginationContainer.appendChild(prevButton);
+
+            for (let i = 1; i <= pageCount; i++) {
+                const button = document.createElement('button');
+                button.textContent = i;
+                button.className = i === currentPage ? 'active' : '';
+                button.addEventListener('click', () => {
+                    currentPage = i;
+                    displayFeedback(allFeedbacks, currentPage);
+                });
+                paginationContainer.appendChild(button);
+            }
+
+            const nextButton = document.createElement('button');
+            nextButton.textContent = '»';
+            nextButton.disabled = currentPage === pageCount;
+            nextButton.addEventListener('click', () => {
+                if (currentPage < pageCount) {
+                    currentPage++;
+                    displayFeedback(allFeedbacks, currentPage);
+                }
+            });
+            paginationContainer.appendChild(nextButton);
+        }
+
+        async function fetchFeedback() {
+            try {
+                const response = await fetch('api/feedback.php');
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    allFeedbacks = result.data;
+                    displayFeedback(allFeedbacks, currentPage);
+                } else {
+                    showAlert('Gagal Mengambil Data', result.message, false);
+                }
+            } catch (error) {
+                console.error('Error fetching feedback:', error);
+                showAlert('Kesalahan Koneksi', 'Terjadi kesalahan saat mengambil data feedback.', false);
+            }
+        }
+        
+        nameInput.addEventListener('input', () => {
+            hidePopover(nameIcon, namePopover);
+        });
+
+        emailInput.addEventListener('input', () => {
+            const email = emailInput.value.trim();
+            if (email !== '' && !/^\S+@\S+\.\S+$/.test(email)) {
+                showPopover(emailIcon, emailPopover, 'Format email tidak valid.');
+            } else {
+                hidePopover(emailIcon, emailPopover);
+            }
+        });
+
+        commentsInput.addEventListener('input', () => {
+            hidePopover(commentsIcon, commentsPopover);
+        });
+
+        nameInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                emailInput.focus();
+            }
+        });
+
+        emailInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                commentsInput.focus();
+            }
+        });
+
+        commentsInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                submitButton.click();
+            }
+        });
+
+        feedbackForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            hideAllPopovers();
+
+            const name = nameInput.value.trim();
+            const email = emailInput.value.trim();
+            const comments = commentsInput.value.trim();
+
+            let hasError = false;
+
+            if (name === '') {
+                showPopover(nameIcon, namePopover, 'Nama wajib diisi.');
+                hasError = true;
+            }
+
+            if (email === '') {
+                showPopover(emailIcon, emailPopover, 'Email wajib diisi.');
+                hasError = true;
+            }
+
+            if (comments === '') {
+                showPopover(commentsIcon, commentsPopover, 'Komentar wajib diisi.');
+                hasError = true;
+            }
+
+            if (hasError) {
+                return;
+            }
+
+            const data = { name, email, comments };
+
+            try {
+                const response = await fetch('api/feedback.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    const now = new Date();
+                    const formattedDate = now.toLocaleDateString('id-ID', {
+                        year: 'numeric', month: 'long', day: 'numeric',
+                        hour: '2-digit', minute: '2-digit'
+                    });
+                    
+                    const details = {
+                        name: data.name,
+                        email: data.email,
+                        date: formattedDate
+                    };
+                    showAlert('Sukses!', 'Feedback berhasil dikirim!', true, details);
+
+                    feedbackForm.reset();
+                    currentPage = 1;
+                    fetchFeedback();
+                } else {
+                    showAlert('Gagal Mengirim', result.message, false);
+                }
+            } catch (error) {
+                console.error('Error submitting feedback:', error);
+                showAlert('Kesalahan Koneksi', 'Terjadi kesalahan saat mengirim feedback.', false);
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', fetchFeedback);
+    </script>
+</body>
+</html>
